@@ -4,7 +4,7 @@ from config import paths, get_device, parameters_eeg
 from models import load_audio_model, load_eeg_model
 
 device=get_device()
-meta_model=load_meta_model("modelo_fusion") #importar desde colab
+meta_model=load_meta_model("components_ai\fusion\insumos_fusion\meta_model.pkl") #importar desde colab
 audio_model=load_audio_model(paths["checkpoint_audio"],device)
 eeg_model=load_eeg_model(paths["checkpoint_eeg"],device,parameters_eeg)
 _,p_audio = predict_audio(audio_model, dataset_audio[10]['audio_tensor'], device) #El dataset_audio[0] hace referencia al registro que se quiere predecir
