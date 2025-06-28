@@ -1,18 +1,12 @@
-def predict_audio(model, audio_tensor, device):
-    with torch.no_grad():
-        return model(audio_tensor.unsqueeze(0).to(device)).item()
+from fusion import load_meta_model, fused_inference
+from predict import predict_audio, predict_eeg
+from config import paths, get_device, parameters_eeg
+from models import load_audio_model, load_eeg_model
 
-def predict_eeg(model, eeg_tensor, age_tensor, device):
-    with torch.no_grad():
-        return model(eeg_tensor.unsqueeze(0).to(device), age_tensor.unsqueeze(0).to(device)).item()
+device=get_device()
+meta_model=load_meta_model("modelo_fusion") #importar desde colab
+audio_model=load_audio_model(paths["checkpoint_audio"],device)
+eeg_model=load_eeg_model(paths["checkpoint_eeg"],device,parameters_eeg)
+_,p_audio = predict_audio(audio_model, dataset_audio[10]['audio_tensor'], device) #El dataset_audio[0] hace referencia al registro que se quiere predecir
+_,p_eeg = predict_eeg(eeg_model, dataset_eeg[10]['eeg_tensor'], dataset_eeg[0]['age'], device)
 
-def fused_inference(meta_model, p_audio=None, p_eeg=None):
-    p_audio = p_audio if p_audio is not None else 0.5
-    p_eeg = p_eeg if p_eeg is not None else 0.5
-    return meta_model.predict([[p_audio, p_eeg]])[0], meta_model.predict_proba([[p_audio, p_eeg]])[0][1]
-
-def predict_multimodel():
-    p_audio = predict_audio(model_audio, sample['audio_tensor'], device)
-    p_eeg = predict_eeg(model_audio, sample['audio_tensor'], device)
-    result = fused_inference(meta_model, p_audio, p_eeg)
-    return result
