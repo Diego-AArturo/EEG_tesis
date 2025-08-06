@@ -3,6 +3,7 @@ from pathlib import Path
 import torch, torchaudio
 import numpy as np
 import pyedflib
+from eeg.eeg_transforms import build_transform_reduced
 
 # ----- AUDIO --------------------------------------------------------- #
 def load_audio_file(path_wav: str | Path,
@@ -34,52 +35,28 @@ def load_audio_file(path_wav: str | Path,
 
 # ----- EEG ----------------------------------------------------------- #
 def load_eeg_file_pyedf(edf_path: str | Path,
-                        seq_length: int,
                         relevant_idx: list[int],
-                        age_mean: float = 0.,
-                        age_std:  float = 1.):
-    """
-    Lee un EDF con pyEDFlib, conserva solo los canales 'relevant_idx'
-    (índices 0-based respecto al archivo), aplica el mismo transform y
-    devuelve  (eeg_tensor, age_tensor).
+                        transform=None,
+                        age_mean: float = 71.2054,
+                        age_std: float = 9.8287,
+                        seq_length: int = 3000):
+    if transform is None:
+        transform = build_transform_reduced(relevant_idx)
 
-    Parameters
-    ----------
-    edf_path      : ruta al archivo EDF.
-    seq_length    : nº de muestras que usaste (e.g. 3000).
-    relevant_idx  : lista de índices de canal que entrenaste (len = in_channels).
-    age_mean/std  : para normalizar edad (si la usas; pon 0/1 si no).
-    """
-    edf_path = Path(edf_path)
     f = pyedflib.EdfReader(str(edf_path))
+    sigs = [f.readSignal(i).astype(np.float32) for i in range(f.signals_in_file)]
+    f._close()
 
-    # --- leer canales relevantes ------------------------------------------------
-    sigs   = []
-    for ch in relevant_idx:
-        sig = f.readSignal(ch)             # numpy (N,)
-        sigs.append(sig.astype(np.float32))
-    data = np.vstack(sigs)                 # (C, N_total)
-    f._close()                             # cerrar descriptor
+    data = np.vstack(sigs)
+    data = data[:, :seq_length] if data.shape[1] >= seq_length \
+           else np.pad(data, ((0, 0), (0, seq_length - data.shape[1])), "constant")
 
-    # --- recorte / padding a seq_length -----------------------------------------
-    if data.shape[1] >= seq_length:
-        data = data[:, :seq_length]
-    else:
-        pad = seq_length - data.shape[1]
-        data = np.pad(data, ((0, 0), (0, pad)), mode="constant")
+    sample = transform({'signal': torch.tensor(data)})
+    eeg_tensor = sample['signal']                       # (C_relev, L_crop)
 
-    # --- a tensor + mismo transform --------------------------------------------
-    eeg_tensor = torch.from_numpy(data)      # (C, L) float32
-    sample     = {'signal': eeg_tensor}
-    sample     = transform_reduced(sample)   # aplica EegRandomCrop + DropChannels
-    eeg_tensor = sample['signal']            # (len(relevant_idx), L_crop)
-
-    # --- edad (si existe) -------------------------------------------------------
     try:
-        h_age = int(f.getPatientAdditional())   # ejemplo: guardaron la edad aquí
+        age = int(f.getPatientAdditional())
     except Exception:
-        h_age = 0
-    age_norm = (h_age - age_mean) / age_std
-    age_tensor = torch.tensor(age_norm, dtype=torch.float32)
-
+        age = 0
+    age_tensor = torch.tensor((age - age_mean) / age_std, dtype=torch.float32)
     return eeg_tensor, age_tensor
