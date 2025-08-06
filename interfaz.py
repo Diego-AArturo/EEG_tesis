@@ -33,7 +33,34 @@ with st.form("input_form"):
         if procesar:
             resultado = "DCL"
             
-            prob_dcl ,prob_normal = predict_multimodel(uploaded_file_eeg,uploaded_file_audio)
+            # Guardar archivos temporalmente
+            import tempfile
+            import os
+            
+            if not uploaded_file_eeg or not uploaded_file_audio:
+                st.error("Por favor, sube ambos archivos (EEG y Audio)")
+                return
+                
+            try:
+                # Crear archivos temporales
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.edf') as tmp_eeg:
+                    tmp_eeg.write(uploaded_file_eeg.getvalue())
+                    eeg_path = tmp_eeg.name
+                    
+                with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file_audio.name)[1]) as tmp_audio:
+                    tmp_audio.write(uploaded_file_audio.getvalue())
+                    audio_path = tmp_audio.name
+                
+                # Realizar predicción
+                try:
+                    prob_dcl, prob_normal = predict_multimodel(eeg_path, audio_path)
+                finally:
+                    # Limpiar archivos temporales
+                    os.unlink(eeg_path)
+                    os.unlink(audio_path)
+            except Exception as e:
+                st.error(f"Error al procesar los archivos: {str(e)}")
+                return
 
             resultado_placeholder.markdown(
                 "<div style='text-align: center; background-color: #262730;margin-top: 0.5rem; padding: 0.5rem; border-radius: 0.5rem;'>"
@@ -62,6 +89,10 @@ with st.form("input_form"):
         # Botón Limpiar (sin funcionalidad real aún)
         contenedor.markdown("<div style='margin-top: 0.5rem;'></div>", unsafe_allow_html=True)
         limpiar = st.form_submit_button("Limpiar")
+        if limpiar:
+            # Reiniciar el estado
+            st.session_state.clear()
+            st.experimental_rerun()
 
 
 
