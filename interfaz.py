@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from components_ai.fusion.fusion_inf import predict_multimodel
+import tempfile
+import os
 
 # Título principal
 st.markdown(
@@ -31,36 +33,37 @@ with st.form("input_form"):
         contenedor.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
 
         if procesar:
-            resultado = "DCL"
-            
-            # Guardar archivos temporalmente
-            import tempfile
-            import os
-            
             if not uploaded_file_eeg or not uploaded_file_audio:
                 st.error("Por favor, sube ambos archivos (EEG y Audio)")
-                return
-                
+                st.stop()
+
             try:
-                # Crear archivos temporales
+                # Guardar archivos temporalmente
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.edf') as tmp_eeg:
                     tmp_eeg.write(uploaded_file_eeg.getvalue())
                     eeg_path = tmp_eeg.name
-                    
-                with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file_audio.name)[1]) as tmp_audio:
+
+                audio_ext = os.path.splitext(uploaded_file_audio.name)[1]
+                with tempfile.NamedTemporaryFile(delete=False, suffix=audio_ext) as tmp_audio:
                     tmp_audio.write(uploaded_file_audio.getvalue())
                     audio_path = tmp_audio.name
-                
-                # Realizar predicción
+
                 try:
-                    prob_dcl, prob_normal = predict_multimodel(eeg_path, audio_path)
+                    # Realizar predicción
+                    prob_dcl, prob_normal = predict_multimodel(audio_path, eeg_path)
+                    
+                    # Determinar el resultado basado en las probabilidades
+                    resultado = "DCL" if prob_dcl > prob_normal else "Normal"
+                    
                 finally:
                     # Limpiar archivos temporales
-                    os.unlink(eeg_path)
-                    os.unlink(audio_path)
+                    if os.path.exists(eeg_path):
+                        os.unlink(eeg_path)
+                    if os.path.exists(audio_path):
+                        os.unlink(audio_path)
             except Exception as e:
                 st.error(f"Error al procesar los archivos: {str(e)}")
-                return
+                st.stop()
 
             resultado_placeholder.markdown(
                 "<div style='text-align: center; background-color: #262730;margin-top: 0.5rem; padding: 0.5rem; border-radius: 0.5rem;'>"
@@ -90,8 +93,7 @@ with st.form("input_form"):
         contenedor.markdown("<div style='margin-top: 0.5rem;'></div>", unsafe_allow_html=True)
         limpiar = st.form_submit_button("Limpiar")
         if limpiar:
-            # Reiniciar el estado
-            st.session_state.clear()
+            # Reiniciar el formulario
             st.experimental_rerun()
 
 

@@ -3,7 +3,7 @@ from pathlib import Path
 import torch, torchaudio
 import numpy as np
 import pyedflib
-from eeg.eeg_transforms import build_transform_reduced
+from components_ai.eeg.eeg_transforms import build_transform_reduced
 
 # ----- AUDIO --------------------------------------------------------- #
 def load_audio_file(path_wav: str | Path,

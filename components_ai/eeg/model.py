@@ -1,10 +1,10 @@
-from caueeg.models.activation import get_activation_class
-from caueeg.models.activation import get_activation_functional
-from caueeg.models.utils import program_conv_filters
-from caueeg.models.utils import make_pool_or_not
-from caueeg.datasets.caueeg_dataset import *
-from caueeg.datasets.caueeg_script import *
-from caueeg.datasets.pipeline import *
+from components_ai.eeg.caueeg.models.activation import get_activation_class
+from components_ai.eeg.caueeg.models.activation import get_activation_functional
+from components_ai.eeg.caueeg.models.utils import program_conv_filters
+from components_ai.eeg.caueeg.models.utils import make_pool_or_not
+from components_ai.eeg.caueeg.datasets.caueeg_dataset import *
+from components_ai.eeg.caueeg.datasets.caueeg_script import *
+from components_ai.eeg.caueeg.datasets.pipeline import *
 
 import numpy as np
 import torch

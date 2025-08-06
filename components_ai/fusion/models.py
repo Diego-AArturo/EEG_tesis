@@ -1,9 +1,9 @@
 import torch
-from audio.models import AudioClassifier
-from eeg.model import CNNTransformer
-from eeg.caueeg.datasets.caueeg_dataset import *
-from eeg.caueeg.datasets.caueeg_script import *
-from eeg.caueeg.datasets.pipeline import *
+from components_ai.audio.models import AudioClassifier
+from components_ai.eeg.model import CNNTransformer
+from components_ai.eeg.caueeg.datasets.caueeg_dataset import *
+from components_ai.eeg.caueeg.datasets.caueeg_script import *
+from components_ai.eeg.caueeg.datasets.pipeline import *
 
 
 def load_audio_model(path,device): 

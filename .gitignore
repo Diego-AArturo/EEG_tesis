@@ -2,3 +2,11 @@
 /.venv
 components_ai/fusion/insumos_fusion/checkpoint_*.pt
 components_ai/fusion/insumos_fusion/*.pkl
+components_ai/__pycache__
+components_ai/eeg/__pycache__
+components_ai/audio/__pycache__
+components_ai/fusion/__pycache__
+components_ai/fusion/insumos_fusion/__pycache__
+components_ai/eeg/caueeg/__pycache__
+components_ai/eeg/caueeg/datasets/__pycache__
+components_ai/eeg/caueeg/models/__pycache__
