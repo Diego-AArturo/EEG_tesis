@@ -1,9 +1,15 @@
 # fusion_project/io_preprocess.py
 from pathlib import Path
-import torch, torchaudio
+import torch
+import torchaudio
 import numpy as np
 import pyedflib
 from components_ai.eeg.eeg_transforms import build_transform_reduced
+import soundfile as sf
+import resampy
+
+# Configurar el backend de torchaudio
+# torchaudio.set_audio_backend("soundfile")
 
 # ----- AUDIO --------------------------------------------------------- #
 def load_audio_file(path_wav: str | Path,
@@ -14,22 +20,44 @@ def load_audio_file(path_wav: str | Path,
     Devuelve espectrograma log-mel + delta: shape (2, 64, T).
     Aplica misma normalización que el dataset de entrenamiento.
     """
-    path_wav = Path(path_wav)
-    sig, sr_orig = torchaudio.load(path_wav)     # (1, N)
-
+    
+    
+    # Cargar audio usando soundfile
+    path_wav = str(Path(path_wav))
+    audio_data, sr_orig = sf.read(path_wav)
+    
+    # Convertir a tensor y añadir dimensión de canal si es necesario
+    if len(audio_data.shape) == 1:
+        audio_data = audio_data.reshape(1, -1)
+    elif len(audio_data.shape) == 2:
+        audio_data = audio_data.T  # Convertir a (channels, samples)
+    
+    sig = torch.FloatTensor(audio_data)
+    
+    # Resamplear si es necesario
     if sr_orig != target_sr:
-        sig = torchaudio.functional.resample(sig, sr_orig, target_sr)
-
-    mel = torchaudio.transforms.MelSpectrogram(
-        sample_rate=target_sr, n_fft=1024, hop_length=256,
-        n_mels=64, power=2.0
-    )(sig)                                       # (1, 64, T)
-
+        # Resamplear cada canal independientemente
+        resampled_channels = []
+        for channel in range(sig.shape[0]):
+            resampled = resampy.resample(sig[channel].numpy(), sr_orig, target_sr)
+            resampled_channels.append(resampled)
+        sig = torch.FloatTensor(np.stack(resampled_channels))
+    
+    # Crear el espectrograma
+    mel_transform = torchaudio.transforms.MelSpectrogram(
+        sample_rate=target_sr,
+        n_fft=1024,
+        hop_length=256,
+        n_mels=64,
+        power=2.0
+    )
+    
+    mel = mel_transform(sig)
     mel_db = torchaudio.functional.amplitude_to_DB(mel)
-    delta  = torchaudio.functional.compute_deltas(mel_db)
-
-    spec = torch.cat([mel_db, delta], dim=0)     # (2, 64, T)
-    spec = (spec - mean) / std                   # misma normalización
+    delta = torchaudio.functional.compute_deltas(mel_db)
+    
+    spec = torch.cat([mel_db, delta], dim=0)
+    spec = (spec - mean) / std
     return spec.float()
 
 

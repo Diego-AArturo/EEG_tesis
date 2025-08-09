@@ -10,3 +10,4 @@ components_ai/fusion/insumos_fusion/__pycache__
 components_ai/eeg/caueeg/__pycache__
 components_ai/eeg/caueeg/datasets/__pycache__
 components_ai/eeg/caueeg/models/__pycache__
+/.gradio

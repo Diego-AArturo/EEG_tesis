@@ -1,9 +1,17 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from components_ai.fusion.fusion_inf import predict_multimodel
 import tempfile
 import os
+import sys
+from pathlib import Path
+
+# Asegurarse de que el directorio raíz esté en el path
+root_dir = Path(__file__).parent
+if str(root_dir) not in sys.path:
+    sys.path.append(str(root_dir))
+
+from components_ai.fusion.fusion_inf import predict_multimodel
 
 # Título principal
 st.markdown(
