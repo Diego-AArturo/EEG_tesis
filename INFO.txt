@@ -1,0 +1,7 @@
+#Sistema de Fusión Intermodal para la Detección del Deterioro Cognitivo
+
+Proyecto de investigación que utiliza señales EEG y voz para apoyar la detección temprana del deterioro cognitivo mediante técnicas de aprendizaje profundo
+
+#Dataset
+- EEG: Chung-Ang University Hospital EEG Dataset (CAU-EEG)  
+- Voz: DementiaBank (colección Ivanova en español)  
